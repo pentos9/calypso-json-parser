@@ -1,4 +1,4 @@
-package com.spacex.calypso;
+package com.spacex.calypso.tokenizer;
 
 import com.spacex.calypso.enums.TokenType;
 import lombok.Data;
