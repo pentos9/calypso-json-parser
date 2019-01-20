@@ -36,6 +36,9 @@ public class Tokenizer {
         } while (token.getTokenType() != TokenType.END_DOC);
     }
 
+    /**
+     *
+     */
     private Token start() throws Exception {
         c = '?';
 
@@ -74,27 +77,102 @@ public class Tokenizer {
         return c >= 0 && c != ' ';
     }
 
-    private boolean isTrue(int c) {
+    private boolean isTrue(int c) throws IOException {
+        if (c == 't') {
+            c = read();
+            if (c == 'r') {
+                c = read();
+                if (c == 'u') {
+                    c = read();
+                    if (c == 'e') {
+                        return true;
+                    } else {
+                        throw new JsonParseException("Invalid JSON input.");
+                    }
+
+                } else {
+                    throw new JsonParseException("Invalid JSON input");
+                }
+
+            } else {
+                throw new JsonParseException("Invalid JSON input");
+            }
+
+        }
         return false;
     }
 
-    private boolean isFalse(int c) {
-        return false;
+    private boolean isFalse(int c) throws IOException {
+        if (c == 'f') {
+            c = read();
+            if (c == 'a') {
+                c = read();
+                if (c == 'l') {
+                    c = read();
+                    if (c == 's') {
+                        c = read();
+                        if (c == 'e') {
+                            return true;
+                        } else {
+                            throw new JsonParseException("Invalid JSON input");
+                        }
+                    } else {
+                        throw new JsonParseException("Invalid JSON input");
+                    }
+                } else {
+                    throw new JsonParseException("Invalid JSON input");
+                }
+            } else {
+                throw new JsonParseException("Invalid JSON input");
+            }
+        } else {
+            return false;
+        }
     }
 
-    private boolean isEscape() {
-        return false;
+    private boolean isEscape() throws IOException {
+        if (c == '\\') {
+            c = read();
+            if (c == '"' || c == '\\' || c == '/' || c == 'b' ||
+                    c == 'f' || c == 'n' || c == 't' || c == 'r' || c == 'u') {
+                return true;
+            } else {
+                throw new JsonParseException("Invalid JSON input.");
+            }
+        } else {
+            return false;
+        }
     }
 
-    private boolean isNull(int c) {
-        return false;
+    private boolean isNull(int c) throws IOException {
+        if (c == 'n') {
+            c = read();
+
+            if (c == 'u') {
+                c = read();
+                if (c == 'l') {
+                    c = read();
+                    if (c == 'l') {
+                        return true;
+                    } else {
+                        throw new JsonParseException("Invalid JSON input");
+                    }
+                } else {
+                    throw new JsonParseException("Invalid JSON input");
+                }
+            } else {
+                throw new JsonParseException("Invalid JSON input");
+            }
+        } else {
+            return false;
+        }
     }
 
     private boolean isDigit(int c) {
         return false;
     }
 
-    private boolean isDigitOne2Nine() {
+    private boolean isDigitOne2Nine(int c) {
         return false;
     }
 
@@ -123,28 +201,121 @@ public class Tokenizer {
                 (c >= 'A' && c <= 'F');
     }
 
-    private boolean isExp() {
-        return false;
+    private boolean isExp(int c) {
+        return c == 'e' || c == 'E';
     }
 
-    private Token readString() {
-        return null;
+    private Token readString() throws IOException {
+        StringBuilder sb = new StringBuilder();
+        while (true) {
+            c = read();
+            if (isEscape()) {    //判断是否为\", \\, \/, \b, \f, \n, \t, \r.
+                if (c == 'u') {
+                    sb.append('\\' + (char) c);
+                    for (int i = 0; i < 4; i++) {
+                        c = read();
+                        if (isHex(c)) {
+                            sb.append((char) c);
+                        } else {
+                            throw new JsonParseException("Invalid Json input.");
+                        }
+                    }
+                } else {
+                    sb.append("\\" + (char) c);
+                }
+            } else if (c == '"') {
+                return new Token(TokenType.STRING, sb.toString());
+            } else if (c == '\r' || c == '\n') {
+                throw new JsonParseException("Invalid JSON input.");
+            } else {
+                sb.append((char) c);
+            }
+        }
     }
 
-    private Token readNum() {
-        return null;
+    private Token readNum() throws IOException {
+        StringBuilder sb = new StringBuilder();
+        int c = read();
+        if (c == '-') { //-
+            sb.append((char) c);
+            c = read();
+            if (c == '0') { //-0
+                sb.append((char) c);
+                numAppend(sb);
+
+            } else if (isDigitOne2Nine(c)) { //-digit1-9
+                do {
+                    sb.append((char) c);
+                    c = read();
+                } while (isDigit(c));
+                unread();
+                numAppend(sb);
+            } else {
+                throw new JsonParseException("- not followed by digit");
+            }
+        } else if (c == '0') { //0
+            sb.append((char) c);
+            numAppend(sb);
+        } else if (isDigitOne2Nine(c)) { //digit1-9
+            do {
+                sb.append((char) c);
+                c = read();
+            } while (isDigit(c));
+            unread();
+            numAppend(sb);
+        }
+        return new Token(TokenType.NUMBER, sb.toString()); //the value of 0 is null
     }
 
-    private void appendFrac() {
-
+    private void appendFrac(StringBuilder sb) throws IOException {
+        c = read();
+        while (isDigit(c)) {
+            sb.append((char) c);
+            c = read();
+        }
     }
 
-    private void appendExp() {
-
+    private void appendExp(StringBuilder sb) throws IOException {
+        int c = read();
+        if (c == '+' || c == '-') {
+            sb.append((char) c); //append '+' or '-'
+            c = read();
+            if (!isDigit(c)) {
+                throw new JsonParseException("e+(-) or E+(-) not followed by digit");
+            } else { //e+(-) digit
+                do {
+                    sb.append((char) c);
+                    c = read();
+                } while (isDigit(c));
+                unread();
+            }
+        } else if (!isDigit(c)) {
+            throw new JsonParseException("e or E not followed by + or - or digit.");
+        } else { //e digit
+            do {
+                sb.append((char) c);
+                c = read();
+            } while (isDigit(c));
+            unread();
+        }
     }
 
-    private void numAppend() {
+    private void numAppend(StringBuilder sb) throws IOException {
+        c = read();
+        if (c == '.') { //int frac
+            sb.append((char) c); //apppend '.'
+            appendFrac(sb);
+            if (isExp(c)) { //int frac exp
+                sb.append((char) c); //append 'e' or 'E';
+                appendExp(sb);
+            }
 
+        } else if (isExp(c)) { // int exp
+            sb.append((char) c); //append 'e' or 'E'
+            appendExp(sb);
+        } else {
+            unread();
+        }
     }
 
     public Token next() {
