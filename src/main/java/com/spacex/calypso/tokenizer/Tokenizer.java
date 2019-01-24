@@ -42,19 +42,37 @@ public class Tokenizer {
     private Token start() throws Exception {
         c = '?';
 
-        Token token = null;
-
         do {
             c = read();
         } while (isSpace(c));
-
 
         if (isNull(c)) {
             return new Token(TokenType.NULL, null);
         } else if (c == ',') {
             return new Token(TokenType.COMMA, ",");
+        } else if (c == ':') {
+            return new Token(TokenType.COLON, ":");
+        } else if (c == '{') {
+            return new Token(TokenType.START_OBJ, "{");
+        } else if (c == '[') {
+            return new Token(TokenType.START_ARRAY, "[");
+        } else if (c == ']') {
+            return new Token(TokenType.END_ARRAY, "]");
+        } else if (c == '}') {
+            return new Token(TokenType.END_OBJ, "}");
+        } else if (isTrue(c)) {
+            return new Token(TokenType.BOOLEAN, "true"); //the value of TRUE is not null
+        } else if (isFalse(c)) {
+            return new Token(TokenType.BOOLEAN, "false"); //the value of FALSE is null
+        } else if (c == '"') {
+            return readString();
+        } else if (isNum(c)) {
+            unread();
+            return readNum();
+        } else if (c == -1) {
+            return new Token(TokenType.END_DOC, "EOF");
         } else {
-            throw new JsonParseException("");
+            throw new JsonParseException("Invalid JSON input.");
         }
     }
 
