@@ -187,11 +187,11 @@ public class Tokenizer {
     }
 
     private boolean isDigit(int c) {
-        return false;
+        return c >= '0' && c <= '9';
     }
 
     private boolean isDigitOne2Nine(int c) {
-        return false;
+        return c >= '1' && c <= '9';
     }
 
     /**
@@ -205,7 +205,7 @@ public class Tokenizer {
     }
 
     private boolean isNum(int c) {
-        return false;
+        return isDigit(c) || c == '-';
     }
 
     /**
