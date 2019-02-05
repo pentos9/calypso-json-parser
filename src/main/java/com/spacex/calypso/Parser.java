@@ -1,9 +1,11 @@
 package com.spacex.calypso;
 
 import com.spacex.calypso.enums.TokenType;
+import com.spacex.calypso.exception.JsonParseException;
 import com.spacex.calypso.parser.Json;
 import com.spacex.calypso.parser.JsonArray;
 import com.spacex.calypso.parser.JsonObject;
+import com.spacex.calypso.parser.Primary;
 import com.spacex.calypso.parser.Value;
 import com.spacex.calypso.tokenizer.Token;
 import com.spacex.calypso.tokenizer.Tokenizer;
@@ -21,7 +23,7 @@ public class Parser {
         this.tokenizer = tokenizer;
     }
 
-    private JsonObject object() {
+    private JsonObject object() throws JsonParseException {
         tokenizer.next();
         Map<String, Value> map = new HashMap<String, Value>();
         if (isToken(TokenType.END_OBJ)) {
@@ -33,8 +35,33 @@ public class Parser {
         return new JsonObject(map);
     }
 
-    private Map<String, Value> key(Map<String, Value> map) {
-        return null;
+    private Map<String, Value> key(Map<String, Value> map) throws JsonParseException {
+        String key = tokenizer.next().getValue();
+        if (!isToken(TokenType.COLON)) {
+            throw new JsonParseException("Invalid Json String!");
+        } else {
+            tokenizer.next();
+            if (isPrimary()) {
+                Value primary = new Primary(tokenizer.next().getValue());
+                map.put(key, primary);
+            } else if (isToken(TokenType.START_ARRAY)) {
+                Value array = array();
+                map.put(key, array);
+            }
+
+            if (isToken(TokenType.COMMA)) {
+                tokenizer.next();//consume ','
+                if (isToken(TokenType.STRING)) {
+                    map = key(map);
+                }
+            } else if (isToken(TokenType.END_OBJ)) {
+                tokenizer.next();
+                return map;
+            } else {
+                throw new JsonParseException("Invalid Json String!");
+            }
+        }
+        return map;
     }
 
     private JsonArray array() {
