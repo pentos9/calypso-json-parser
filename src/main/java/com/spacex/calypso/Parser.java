@@ -9,6 +9,7 @@ import com.spacex.calypso.tokenizer.Token;
 import com.spacex.calypso.tokenizer.Tokenizer;
 import lombok.Data;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -21,7 +22,15 @@ public class Parser {
     }
 
     private JsonObject object() {
-        return null;
+        tokenizer.next();
+        Map<String, Value> map = new HashMap<String, Value>();
+        if (isToken(TokenType.END_OBJ)) {
+            tokenizer.next();
+            return new JsonObject(map);
+        } else if (isToken(TokenType.STRING)) {
+            map = key(map);
+        }
+        return new JsonObject(map);
     }
 
     private Map<String, Value> key(Map<String, Value> map) {
