@@ -1,5 +1,6 @@
 package com.spacex.calypso;
 
+import com.google.common.collect.Lists;
 import com.spacex.calypso.enums.TokenType;
 import com.spacex.calypso.exception.JsonParseException;
 import com.spacex.calypso.parser.Json;
@@ -64,8 +65,34 @@ public class Parser {
         return map;
     }
 
-    private JsonArray array() {
-        return null;
+    private JsonArray array() throws JsonParseException {
+        tokenizer.next();
+        List<Json> list = Lists.newArrayList();
+        JsonArray jsonArray = null;
+        if (isToken(TokenType.START_ARRAY)) {
+            jsonArray = array();
+            list.add(jsonArray);
+            if (isToken(TokenType.COMMA)) {
+                tokenizer.next();
+                list = element(list);
+            }
+        } else if (isPrimary()) {
+            list = element(list);
+        } else if (isToken(TokenType.START_OBJ)) {
+            list.add(object());
+            while (isToken(TokenType.COMMA)) {
+                tokenizer.next();
+                list.add(object());
+            }
+        } else if (isToken(TokenType.END_ARRAY)) {
+            tokenizer.next();
+            jsonArray = new JsonArray(list);
+            return jsonArray;
+        }
+
+        tokenizer.next();
+        jsonArray = new JsonArray(list);
+        return jsonArray;
     }
 
     private List<Json> element(List<Json> list) {
