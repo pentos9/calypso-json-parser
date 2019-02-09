@@ -138,7 +138,9 @@ public class Parser {
     }
 
     private boolean isPrimary() {
-        return false;
+        TokenType type = tokenizer.peek(0).getTokenType();
+        return type == TokenType.BOOLEAN || type == TokenType.NULL ||
+                type == TokenType.NUMBER || type == TokenType.STRING;
     }
 
     public Json parse() throws JsonParseException {
