@@ -95,8 +95,25 @@ public class Parser {
         return jsonArray;
     }
 
-    private List<Json> element(List<Json> list) {
-        return null;
+    private List<Json> element(List<Json> list) throws JsonParseException {
+        list.add(new Primary(tokenizer.next().getValue()));
+        if (isToken(TokenType.COMMA)) {
+            tokenizer.next();
+            if (isPrimary()) {
+                list = element(list);
+            } else if (isToken(TokenType.START_OBJ)) {
+                list.add(object());
+            } else if (isToken(TokenType.END_OBJ)) {
+                list.add(array());
+            } else {
+                throw new JsonParseException("Invalid Json String!");
+            }
+        } else if (isToken(TokenType.END_ARRAY)) {
+            return list;
+        } else {
+            throw new JsonParseException("Invalid Json String!");
+        }
+        return list;
     }
 
     private Json json() {
