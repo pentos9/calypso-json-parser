@@ -12,6 +12,8 @@ import com.spacex.calypso.tokenizer.Token;
 import com.spacex.calypso.tokenizer.Tokenizer;
 import lombok.Data;
 
+import java.io.BufferedReader;
+import java.io.StringReader;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -148,8 +150,11 @@ public class Parser {
         return json;
     }
 
-    public static JsonObject parseJSONObject(String s) {
-        return null;
+    public static JsonObject parseJSONObject(String s) throws Exception {
+        Tokenizer tokenizer = new Tokenizer(new BufferedReader(new StringReader(s)));
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        return parser.object();
     }
 
     public static JsonArray parseJSONArray(String s) {
