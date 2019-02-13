@@ -28,7 +28,7 @@ public class Tokenizer {
     /**
      * read json content and build tokens
      */
-    private void tokenize() throws Exception {
+    public void tokenize() throws Exception {
         Token token = null;
         do {
             token = start();
