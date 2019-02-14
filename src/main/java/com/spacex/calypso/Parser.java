@@ -157,8 +157,11 @@ public class Parser {
         return parser.object();
     }
 
-    public static JsonArray parseJSONArray(String s) {
-        return null;
+    public static JsonArray parseJSONArray(String s) throws Exception {
+        Tokenizer tokenizer = new Tokenizer(new BufferedReader(new StringReader(s)));
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        return parser.array();
     }
 
     public static <T> T fromJson(String jsonString, Class<T> classOfT) throws Exception {
