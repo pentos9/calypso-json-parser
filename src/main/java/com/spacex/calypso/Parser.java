@@ -13,7 +13,12 @@ import com.spacex.calypso.tokenizer.Tokenizer;
 import lombok.Data;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.StringReader;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -165,7 +170,43 @@ public class Parser {
     }
 
     public static <T> T fromJson(String jsonString, Class<T> classOfT) throws Exception {
-        return null;
+        Tokenizer tokenizer = new Tokenizer(new BufferedReader(new StringReader(jsonString)));
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        JsonObject result = parser.object();
+
+        Constructor<T> constructor = classOfT.getConstructor();
+        Object latestNews = constructor.newInstance();
+        Field[] fields = classOfT.getDeclaredFields();
+        int numField = fields.length;
+
+        String[] fieldNames = new String[numField];
+        String[] fieldTypes = new String[numField];
+
+        for (int i = 0; i < numField; i++) {
+            fieldNames[i] = fields[i].getName();
+            fieldTypes[i] = fields[i].getType().getTypeName();
+        }
+
+        for (int i = 0; i < numField; i++) {
+            if (fieldTypes[i].equals("java.lang.String")) {
+                fields[i].setAccessible(true);
+                fields[i].set(latestNews, result.getString(fieldNames[i]));
+            } else if (fieldTypes.equals("java.util.List")) {
+                fields[i].setAccessible(true);
+                JsonArray jsonArray = result.getJArray(fieldNames[i]);
+                ParameterizedType pt = (ParameterizedType) fields[i].getGenericType();
+                Type elementType = pt.getActualTypeArguments()[0];
+                String elementTypeName = elementType.getTypeName();
+                Class<?> elementClass = Class.forName(elementTypeName);
+                fields[i].set(latestNews, inflateList(jsonArray, elementClass));
+            } else if (fieldTypes.equals("int")) {
+                fields[i].setAccessible(true);
+                fields[i].set(latestNews, result.getString(fieldNames[i]));
+            }
+        }
+
+        return (T) latestNews;
     }
 
     public static <T> List<T> inflateList(JsonArray array, Class<T> clz) throws Exception {
