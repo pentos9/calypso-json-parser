@@ -177,7 +177,7 @@ public class Parser {
         JsonObject result = parser.object();
 
         Constructor<T> constructor = classOfT.getConstructor();
-        Object latestNews = constructor.newInstance();
+        Object targetObject = constructor.newInstance();
         Field[] fields = classOfT.getDeclaredFields();
         int numField = fields.length;
 
@@ -192,7 +192,7 @@ public class Parser {
         for (int i = 0; i < numField; i++) {
             if (fieldTypes[i].equals("java.lang.String")) {
                 fields[i].setAccessible(true);
-                fields[i].set(latestNews, result.getString(fieldNames[i]));
+                fields[i].set(targetObject, result.getString(fieldNames[i]));
             } else if (fieldTypes.equals("java.util.List")) {
                 fields[i].setAccessible(true);
                 JsonArray jsonArray = result.getJArray(fieldNames[i]);
@@ -200,14 +200,14 @@ public class Parser {
                 Type elementType = pt.getActualTypeArguments()[0];
                 String elementTypeName = elementType.getTypeName();
                 Class<?> elementClass = Class.forName(elementTypeName);
-                fields[i].set(latestNews, inflateList(jsonArray, elementClass));
+                fields[i].set(targetObject, inflateList(jsonArray, elementClass));
             } else if (fieldTypes.equals("int")) {
                 fields[i].setAccessible(true);
-                fields[i].set(latestNews, result.getInt(fieldNames[i]));
+                fields[i].set(targetObject, result.getInt(fieldNames[i]));
             }
         }
 
-        return (T) latestNews;
+        return (T) targetObject;
     }
 
     public static <T> List<T> inflateList(JsonArray array, Class<T> clz) throws Exception {
