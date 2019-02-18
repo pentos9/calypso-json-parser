@@ -19,6 +19,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -202,7 +203,7 @@ public class Parser {
                 fields[i].set(latestNews, inflateList(jsonArray, elementClass));
             } else if (fieldTypes.equals("int")) {
                 fields[i].setAccessible(true);
-                fields[i].set(latestNews, result.getString(fieldNames[i]));
+                fields[i].set(latestNews, result.getInt(fieldNames[i]));
             }
         }
 
@@ -210,6 +211,56 @@ public class Parser {
     }
 
     public static <T> List<T> inflateList(JsonArray array, Class<T> clz) throws Exception {
-        return null;
+        int size = array.length();
+
+        List<T> list = new ArrayList<>();
+        Constructor<T> constructor = clz.getConstructor();
+        String className = clz.getName();
+        if (className.equals("java.lang.String")) {
+            for (int i = 0; i < size; i++) {
+                String element = (String) ((Primary) array.get(i)).getValue();
+                list.add((T) element);
+                return list;
+            }
+        }
+
+        Field[] fields = clz.getDeclaredFields();
+        int numField = fields.length;
+
+        String[] fieldNames = new String[numField];
+        String[] fieldTypes = new String[numField];
+
+        for (int i = 0; i < numField; i++) {
+            fieldNames[i] = fields[i].getName();
+            fieldTypes[i] = fields[i].getType().getTypeName();
+        }
+
+        for (int i = 0; i < size; i++) {
+            T element = constructor.newInstance();
+            JsonObject object = (JsonObject) array.get(i);
+
+            for (int j = 0; j < numField; j++) {
+                if (fieldTypes[j].equals("java.lang.String")) {
+                    fields[j].setAccessible(true);
+                    fields[i].set(element, object.getString(fieldNames[j]));
+                } else if (fieldTypes[j].equals("java.util.List")) {
+                    fields[j].setAccessible(true);
+                    JsonArray nestArray = object.getJArray(fieldNames[j]);
+                    ParameterizedType pt = (ParameterizedType) fields[j].getGenericType();
+                    Type elementType = pt.getActualTypeArguments()[0];
+                    String elementTypeName = elementType.getTypeName();
+                    Class<?> elementClass = Class.forName(elementTypeName);
+                    String value = null;
+                    fields[j].set(element, inflateList(nestArray, elementClass));
+                } else if (fieldTypes[j].equals("int")) {
+                    fields[j].setAccessible(true);
+                    fields[j].set(element, object.getInt(fieldNames[j]));
+                }
+            }
+
+            list.add(element);
+        }
+
+        return list;
     }
 }
