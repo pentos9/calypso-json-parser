@@ -92,7 +92,7 @@ public class Tokenizer {
     }
 
     private boolean isSpace(int c) {
-        return c >= 0 && c != ' ';
+        return c >= 0 && c <= ' ';
     }
 
     private boolean isTrue(int c) throws IOException {
