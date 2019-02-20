@@ -15,18 +15,30 @@ public class JsonObject implements Json {
     }
 
     public int getInt(String key) {
+        if (!map.containsKey(key)) {
+            return 0;
+        }
         return Integer.parseInt((String) map.get(key).value());
     }
 
     public String getString(String key) {
+        if (!map.containsKey(key)) {
+            return null;
+        }
         return (String) map.get(key).value();
     }
 
     public boolean getBoolean(String key) {
+        if (!map.containsKey(key)) {
+            return false;
+        }
         return Boolean.parseBoolean((String) map.get(key).value());
     }
 
     public JsonArray getJArray(String key) {
+        if (!map.containsKey(key)) {
+            return null;
+        }
         return (JsonArray) map.get(key).value();
     }
 }
