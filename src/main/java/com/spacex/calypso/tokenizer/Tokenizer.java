@@ -19,7 +19,7 @@ public class Tokenizer {
 
     private int savedChar;
 
-    private int c;//current char
+    private int currentChar;//current char
 
     public Tokenizer(Reader reader) {
         this.reader = reader;
@@ -40,36 +40,36 @@ public class Tokenizer {
      *
      */
     private Token start() throws Exception {
-        c = '?';
+        currentChar = '?';
 
         do {
-            c = read();
-        } while (isSpace(c));
+            currentChar = read();
+        } while (isSpace(currentChar));
 
-        if (isNull(c)) {
+        if (isNull(currentChar)) {
             return new Token(TokenType.NULL, null);
-        } else if (c == ',') {
+        } else if (currentChar == ',') {
             return new Token(TokenType.COMMA, ",");
-        } else if (c == ':') {
+        } else if (currentChar == ':') {
             return new Token(TokenType.COLON, ":");
-        } else if (c == '{') {
+        } else if (currentChar == '{') {
             return new Token(TokenType.START_OBJ, "{");
-        } else if (c == '[') {
+        } else if (currentChar == '[') {
             return new Token(TokenType.START_ARRAY, "[");
-        } else if (c == ']') {
+        } else if (currentChar == ']') {
             return new Token(TokenType.END_ARRAY, "]");
-        } else if (c == '}') {
+        } else if (currentChar == '}') {
             return new Token(TokenType.END_OBJ, "}");
-        } else if (isTrue(c)) {
+        } else if (isTrue(currentChar)) {
             return new Token(TokenType.BOOLEAN, "true"); //the value of TRUE is not null
-        } else if (isFalse(c)) {
+        } else if (isFalse(currentChar)) {
             return new Token(TokenType.BOOLEAN, "false"); //the value of FALSE is null
-        } else if (c == '"') {
+        } else if (currentChar == '"') {
             return readString();
-        } else if (isNum(c)) {
+        } else if (isNum(currentChar)) {
             unread();
             return readNum();
-        } else if (c == -1) {
+        } else if (currentChar == -1) {
             return new Token(TokenType.END_DOC, "EOF");
         } else {
             throw new JsonParseException("Invalid JSON input.");
@@ -149,10 +149,10 @@ public class Tokenizer {
     }
 
     private boolean isEscape() throws IOException {
-        if (c == '\\') {
-            c = read();
-            if (c == '"' || c == '\\' || c == '/' || c == 'b' ||
-                    c == 'f' || c == 'n' || c == 't' || c == 'r' || c == 'u') {
+        if (currentChar == '\\') {
+            currentChar = read();
+            if (currentChar == '"' || currentChar == '\\' || currentChar == '/' || currentChar == 'b' ||
+                    currentChar == 'f' || currentChar == 'n' || currentChar == 't' || currentChar == 'r' || currentChar == 'u') {
                 return true;
             } else {
                 throw new JsonParseException("Invalid JSON input.");
@@ -226,27 +226,27 @@ public class Tokenizer {
     private Token readString() throws IOException {
         StringBuilder sb = new StringBuilder();
         while (true) {
-            c = read();
+            currentChar = read();
             if (isEscape()) {    //判断是否为\", \\, \/, \b, \f, \n, \t, \r.
-                if (c == 'u') {
-                    sb.append('\\' + (char) c);
+                if (currentChar == 'u') {
+                    sb.append('\\' + (char) currentChar);
                     for (int i = 0; i < 4; i++) {
-                        c = read();
-                        if (isHex(c)) {
-                            sb.append((char) c);
+                        currentChar = read();
+                        if (isHex(currentChar)) {
+                            sb.append((char) currentChar);
                         } else {
                             throw new JsonParseException("Invalid Json input.");
                         }
                     }
                 } else {
-                    sb.append("\\" + (char) c);
+                    sb.append("\\" + (char) currentChar);
                 }
-            } else if (c == '"') {
+            } else if (currentChar == '"') {
                 return new Token(TokenType.STRING, sb.toString());
-            } else if (c == '\r' || c == '\n') {
+            } else if (currentChar == '\r' || currentChar == '\n') {
                 throw new JsonParseException("Invalid JSON input.");
             } else {
-                sb.append((char) c);
+                sb.append((char) currentChar);
             }
         }
     }
@@ -286,10 +286,10 @@ public class Tokenizer {
     }
 
     private void appendFrac(StringBuilder sb) throws IOException {
-        c = read();
-        while (isDigit(c)) {
-            sb.append((char) c);
-            c = read();
+        currentChar = read();
+        while (isDigit(currentChar)) {
+            sb.append((char) currentChar);
+            currentChar = read();
         }
     }
 
@@ -319,17 +319,17 @@ public class Tokenizer {
     }
 
     private void numAppend(StringBuilder sb) throws IOException {
-        c = read();
-        if (c == '.') { //int frac
-            sb.append((char) c); //apppend '.'
+        currentChar = read();
+        if (currentChar == '.') { //int frac
+            sb.append((char) currentChar); //apppend '.'
             appendFrac(sb);
-            if (isExp(c)) { //int frac exp
-                sb.append((char) c); //append 'e' or 'E';
+            if (isExp(currentChar)) { //int frac exp
+                sb.append((char) currentChar); //append 'e' or 'E';
                 appendExp(sb);
             }
 
-        } else if (isExp(c)) { // int exp
-            sb.append((char) c); //append 'e' or 'E'
+        } else if (isExp(currentChar)) { // int exp
+            sb.append((char) currentChar); //append 'e' or 'E'
             appendExp(sb);
         } else {
             unread();

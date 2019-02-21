@@ -193,7 +193,7 @@ public class Parser {
             if (fieldTypes[i].equals("java.lang.String")) {
                 fields[i].setAccessible(true);
                 fields[i].set(targetObject, result.getString(fieldNames[i]));
-            } else if (fieldTypes.equals("java.util.List")) {
+            } else if (fieldTypes[i].equals("java.util.List")) {
                 fields[i].setAccessible(true);
                 JsonArray jsonArray = result.getJArray(fieldNames[i]);
                 ParameterizedType pt = (ParameterizedType) fields[i].getGenericType();
@@ -201,9 +201,12 @@ public class Parser {
                 String elementTypeName = elementType.getTypeName();
                 Class<?> elementClass = Class.forName(elementTypeName);
                 fields[i].set(targetObject, inflateList(jsonArray, elementClass));
-            } else if (fieldTypes.equals("int")) {
+            } else if (fieldTypes[i].equals("int")) {
                 fields[i].setAccessible(true);
                 fields[i].set(targetObject, result.getInt(fieldNames[i]));
+            } else if (fieldTypes[i].equals("boolean")) {
+                fields[i].setAccessible(true);
+                fields[i].set(targetObject, result.getBoolean(fieldNames[i]));
             }
         }
 
@@ -237,15 +240,15 @@ public class Parser {
 
         for (int i = 0; i < size; i++) {
             T element = constructor.newInstance();
-            JsonObject object = (JsonObject) array.get(i);
+            JsonObject jsonObject = (JsonObject) array.get(i);
 
             for (int j = 0; j < numField; j++) {
                 if (fieldTypes[j].equals("java.lang.String")) {
                     fields[j].setAccessible(true);
-                    fields[i].set(element, object.getString(fieldNames[j]));
+                    fields[j].set(element, jsonObject.getString(fieldNames[j]));
                 } else if (fieldTypes[j].equals("java.util.List")) {
                     fields[j].setAccessible(true);
-                    JsonArray nestArray = object.getJArray(fieldNames[j]);
+                    JsonArray nestArray = jsonObject.getJArray(fieldNames[j]);
                     ParameterizedType pt = (ParameterizedType) fields[j].getGenericType();
                     Type elementType = pt.getActualTypeArguments()[0];
                     String elementTypeName = elementType.getTypeName();
@@ -254,7 +257,10 @@ public class Parser {
                     fields[j].set(element, inflateList(nestArray, elementClass));
                 } else if (fieldTypes[j].equals("int")) {
                     fields[j].setAccessible(true);
-                    fields[j].set(element, object.getInt(fieldNames[j]));
+                    fields[j].set(element, jsonObject.getInt(fieldNames[j]));
+                } else if (fieldTypes[j].equals("boolean")) {
+                    fields[j].setAccessible(true);
+                    fields[j].set(element, jsonObject.getBoolean(fieldNames[j]));
                 }
             }
 
